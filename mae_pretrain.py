@@ -20,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--base_learning_rate', type=float, default=1.5e-4)
     parser.add_argument('--weight_decay', type=float, default=0.05)
     parser.add_argument('--mask_ratio', type=float, default=0.75)
+    parser.add_argument('--mlp_ratio', type=int, default=4)
     parser.add_argument('--total_epoch', type=int, default=2000)
     parser.add_argument('--warmup_epoch', type=int, default=200)
     parser.add_argument('--patch_size', type=int, default=2)
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     load_batch_size = min(args.max_device_batch_size, batch_size)
 
-#     assert batch_size % load_batch_size == 0
+    assert batch_size % load_batch_size == 0
     steps_per_update = batch_size // load_batch_size
 
     train_dataset = torchvision.datasets.CIFAR10('data', train=True, download=True, transform=Compose([ToTensor(), Normalize(0.5, 0.5)]))
@@ -42,7 +43,7 @@ if __name__ == '__main__':
     wandb.init(project="mae_train_cifar10",name = "default")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio)
+    model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio)
     model = torch.nn.DataParallel(model).to(device)
 
     optim = torch.optim.AdamW(model.parameters(), lr=args.base_learning_rate * args.batch_size / 256, betas=(0.9, 0.95), weight_decay=args.weight_decay)

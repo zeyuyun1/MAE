@@ -1,0 +1,91 @@
+
+Adjusting learning rate of group 0 to 4.5000e-06.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 98%|██████████████████████████████████████████ | 96/98 [00:39<00:00,  2.60it/s]
+Adjusting learning rate of group 0 to 9.0000e-06.
+100%|███████████████████████████████████████████| 98/98 [00:39<00:00,  2.46it/s]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 96%|█████████████████████████████████████████▏ | 94/98 [00:35<00:01,  2.62it/s]
+Adjusting learning rate of group 0 to 1.3500e-05.
+100%|███████████████████████████████████████████| 98/98 [00:36<00:00,  2.67it/s]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+100%|███████████████████████████████████████████| 98/98 [00:38<00:00,  2.57it/s]
+Adjusting learning rate of group 0 to 1.8000e-05.
+In epoch 2, average traning loss is 0.18139460257121495.
+
+
+
+
+
+
+
+
+
+
+
+ 63%|███████████████████████████▏               | 62/98 [00:24<00:14,  2.53it/s]
+Traceback (most recent call last):
+  File "mae_pretrain.py", line 65, in <module>
+    optim.step()
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/lr_scheduler.py", line 65, in wrapper
+    return wrapped(*args, **kwargs)
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/optimizer.py", line 88, in wrapper
+    return func(*args, **kwargs)
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 28, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/adamw.py", line 110, in step
+    F.adamw(params_with_grad,
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/_functional.py", line 132, in adamw
+    exp_avg_sq.mul_(beta2).addcmul_(grad, grad, value=1 - beta2)
+KeyboardInterrupt
