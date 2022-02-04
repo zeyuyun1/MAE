@@ -1,0 +1,40 @@
+
+  0%|                                                    | 0/98 [00:00<?, ?it/s]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 97%|█████████████████████████████████████████▋ | 95/98 [00:39<00:01,  2.71it/s]
+Adjusting learning rate of group 0 to 5.2734e-06.
+100%|███████████████████████████████████████████| 98/98 [00:40<00:00,  2.44it/s]
+
+
+ 12%|█████▎                                     | 12/98 [00:04<00:35,  2.45it/s]
+Traceback (most recent call last):
+  File "mae_pretrain.py", line 64, in <module>
+    optim.step()
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/lr_scheduler.py", line 65, in wrapper
+    return wrapped(*args, **kwargs)
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/optimizer.py", line 88, in wrapper
+    return func(*args, **kwargs)
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/autograd/grad_mode.py", line 28, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/adamw.py", line 110, in step
+    F.adamw(params_with_grad,
+  File "/home/zeyuy/miniconda3/lib/python3.8/site-packages/torch/optim/_functional.py", line 131, in adamw
+    exp_avg.mul_(beta1).add_(grad, alpha=1 - beta1)
+KeyboardInterrupt

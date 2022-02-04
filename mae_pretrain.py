@@ -32,7 +32,7 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     load_batch_size = min(args.max_device_batch_size, batch_size)
 
-    assert batch_size % load_batch_size == 0
+#     assert batch_size % load_batch_size == 0
     steps_per_update = batch_size // load_batch_size
 
     train_dataset = torchvision.datasets.CIFAR10('data', train=True, download=True, transform=Compose([ToTensor(), Normalize(0.5, 0.5)]))

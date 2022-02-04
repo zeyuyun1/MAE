@@ -1,0 +1,27 @@
+{
+    "os": "Linux-5.4.0-77-generic-x86_64-with-glibc2.10",
+    "python": "3.8.8",
+    "heartbeatAt": "2022-02-04T13:15:45.821747",
+    "startedAt": "2022-02-04T13:15:43.701234",
+    "docker": null,
+    "gpu": "GeForce GTX 1080 Ti",
+    "gpu_count": 3,
+    "cpu_count": 12,
+    "cuda": "10.1.243",
+    "args": [
+        "--batch_size",
+        "900"
+    ],
+    "state": "running",
+    "program": "mae_pretrain.py",
+    "codePath": "mae_pretrain.py",
+    "git": {
+        "remote": "git@github.com:zeyuyun1/MAE.git",
+        "commit": "acad660ba18f001316ed423fba721373abee4948"
+    },
+    "email": "chobitstian@berkeley.edu",
+    "root": "/home/zeyuy/mae_train",
+    "host": "kzbdd5",
+    "username": "zeyuy",
+    "executable": "/home/zeyuy/miniconda3/bin/python"
+}
