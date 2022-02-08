@@ -7,10 +7,44 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision.transforms import ToTensor, Compose, Normalize
 from tqdm import tqdm
 import wandb
-
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
 
 from model import *
+from model_origin import *
 from utils import setup_seed
+
+
+def eval_model(model):
+    fea_ls = []
+    i_ls = []
+    for x,i in train_dl:
+    #     print(i)
+        x = x.to(device)
+        features = model.module.encoder.feature_extract(x)
+        features = features.cpu().detach()
+        fea_ls.append(features)
+        i_ls.append(i)
+    #     break
+    X = torch.cat(fea_ls).numpy()
+    y = torch.cat(i_ls).numpy()
+    fea_ls_test = []
+    i_ls_test = []
+    for x,i in test_dl:
+        x = x.to(device)
+        features = model.module.encoder.feature_extract(x)
+        features = features.cpu().detach()
+        fea_ls_test.append(features)
+        i_ls_test.append(i)
+    X_test = torch.cat(fea_ls_test).numpy()
+    y_test = torch.cat(i_ls_test).numpy()
+    neigh = KNeighborsClassifier(n_neighbors=20,metric='cosine')
+    neigh.fit(X, y)
+    y_test_hat = neigh.predict(X_test)
+    acc_score = accuracy_score(y_test,y_test_hat)
+#     print(acc_score)
+    return acc_score
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -43,14 +77,18 @@ if __name__ == '__main__':
     train_dataset = torchvision.datasets.CIFAR10('data', train=True, download=True, transform=Compose([ToTensor(), Normalize(0.5, 0.5)]))
     val_dataset = torchvision.datasets.CIFAR10('data', train=False, download=True, transform=Compose([ToTensor(), Normalize(0.5, 0.5)]))
     dataloader = torch.utils.data.DataLoader(train_dataset, load_batch_size, shuffle=True, num_workers=4)
+    
+    test_dl = torch.utils.data.DataLoader(val_dataset, batch_size=100, shuffle=True, num_workers=4)
+    train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=100, shuffle=True, num_workers=4)
+    
     writer = SummaryWriter(os.path.join('logs', 'cifar10', 'mae-pretrain'))
     wandb.init(project="mae_train_cifar10",name = model_path[:-3])
     wandb.config.update(args)
     
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-    model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio,emb_dim=args.emb_dim)
+    model = MAE_ViT_origin(mask_ratio=args.mask_ratio)
+#     model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio,emb_dim=args.emb_dim)
     model = torch.nn.DataParallel(model).to(device)
 
     optim = torch.optim.AdamW(model.parameters(), lr=args.base_learning_rate * args.batch_size / 256, betas=(0.9, 0.95), weight_decay=args.weight_decay)
@@ -74,11 +112,16 @@ if __name__ == '__main__':
             losses.append(loss.item())
         lr_scheduler.step()
         avg_loss = sum(losses) / len(losses)
-        if e%30==0:
+        if e%50==0:
             torch.save(model.module, model_path)
+            
+        if e%100==0:
+            eval_acc = eval_model(model)
+            wandb.log({'eval_acc': eval_acc})
+            
         writer.add_scalar('mae_loss', avg_loss, global_step=e)
-        print(f'In epoch {e}, average traning loss is {avg_loss}.')
-        wandb.log({'epoch':e, 'accuracy': avg_loss})
+#         print(f'In epoch {e}, average traning loss is {avg_loss}.')
+        wandb.log({'epoch':e, 'mae_loss': avg_loss, 'lr':lr_scheduler.get_last_lr()[0]})
 
         ''' visualize the first 16 predicted images on val dataset'''
         model.eval()
