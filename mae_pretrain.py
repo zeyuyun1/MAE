@@ -17,6 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--batch_size', type=int, default=4096)
     parser.add_argument('--max_device_batch_size', type=int, default=512)
+    parser.add_argument('--emb_dim', type=int, default=192)
     parser.add_argument('--base_learning_rate', type=float, default=1.5e-4)
     parser.add_argument('--weight_decay', type=float, default=0.05)
     parser.add_argument('--mask_ratio', type=float, default=0.75)
@@ -24,11 +25,14 @@ if __name__ == '__main__':
     parser.add_argument('--total_epoch', type=int, default=2000)
     parser.add_argument('--warmup_epoch', type=int, default=200)
     parser.add_argument('--patch_size', type=int, default=2)
-    parser.add_argument('--model_path', type=str, default='vit-t-mae.pt')
-
+    parser.add_argument('--model_name', type=str, default='vit-t-mae')
+    
     args = parser.parse_args()
 
     setup_seed(args.seed)
+    
+    model_path = "{}_h_dim_{}_mlp_ratio_{}_patch_size_{}_batch_size_{}.pt".format(args.model_name,args.emb_dim,args.mlp_ratio,args.patch_size,args.batch_size)
+
 
     batch_size = args.batch_size
     load_batch_size = min(args.max_device_batch_size, batch_size)
@@ -40,10 +44,13 @@ if __name__ == '__main__':
     val_dataset = torchvision.datasets.CIFAR10('data', train=False, download=True, transform=Compose([ToTensor(), Normalize(0.5, 0.5)]))
     dataloader = torch.utils.data.DataLoader(train_dataset, load_batch_size, shuffle=True, num_workers=4)
     writer = SummaryWriter(os.path.join('logs', 'cifar10', 'mae-pretrain'))
-    wandb.init(project="mae_train_cifar10",name = "default")
+    wandb.init(project="mae_train_cifar10",name = model_path[:-3])
+    wandb.config.update(args)
+    
+    
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio)
+    model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio,emb_dim=args.emb_dim)
     model = torch.nn.DataParallel(model).to(device)
 
     optim = torch.optim.AdamW(model.parameters(), lr=args.base_learning_rate * args.batch_size / 256, betas=(0.9, 0.95), weight_decay=args.weight_decay)
@@ -68,7 +75,7 @@ if __name__ == '__main__':
         lr_scheduler.step()
         avg_loss = sum(losses) / len(losses)
         if e%30==0:
-            torch.save(model.module, args.model_path)
+            torch.save(model.module, model_path)
         writer.add_scalar('mae_loss', avg_loss, global_step=e)
         print(f'In epoch {e}, average traning loss is {avg_loss}.')
         wandb.log({'epoch':e, 'accuracy': avg_loss})
@@ -85,4 +92,4 @@ if __name__ == '__main__':
             writer.add_image('mae_image', (img + 1) / 2, global_step=e)
         
         ''' save model '''
-        torch.save(model.module, args.model_path)
+        torch.save(model.module, model_path)

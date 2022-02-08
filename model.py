@@ -57,7 +57,7 @@ class MAE_Encoder(torch.nn.Module):
         
         self.patch_embs = torch.nn.Linear(patch_size**2*3, emb_dim)
         
-        self.transformer = torch.nn.Sequential(*[Block(emb_dim, num_head) for _ in range(num_layer)])
+        self.transformer = torch.nn.Sequential(*[Block(emb_dim, num_head,mlp_ratio=mlp_ratio) for _ in range(num_layer)])
 
         self.layer_norm = torch.nn.LayerNorm(emb_dim)
 
@@ -94,6 +94,16 @@ class MAE_Encoder(torch.nn.Module):
         features = rearrange(features, 'b t c -> t b c')
 
         return features, backward_indexes
+    
+    def get_feature(self, img):
+        patches = self._to_words(img)
+        patches = self.patch_embs(patches)
+        patches = rearrange(patches, 'b t c -> t b c')
+        patches = patches + self.pos_embedding
+        patches = torch.cat([self.cls_token.expand(-1, patches.shape[1], -1), patches], dim=0)
+        patches = rearrange(patches, 't b c -> b t c')
+        features = self.layer_norm(self.transformer(patches))
+        return features.mean(1)
 
 class MAE_Decoder(torch.nn.Module):
     def __init__(self,
@@ -110,7 +120,7 @@ class MAE_Decoder(torch.nn.Module):
         self.pos_embedding = torch.nn.Parameter(torch.randn((image_size // patch_size) ** 2 + 1, 1, emb_dim))
 #         self.pos_embedding = torch.nn.Parameter(torch.zeros(1,(image_size // patch_size) ** 2, emb_dim))
 
-        self.transformer = torch.nn.Sequential(*[Block(emb_dim, num_head) for _ in range(num_layer)])
+        self.transformer = torch.nn.Sequential(*[Block(emb_dim, num_head,mlp_ratio=mlp_ratio) for _ in range(num_layer)])
 
         self.head = torch.nn.Linear(emb_dim, 3 * patch_size ** 2)
         self.patch2img = Rearrange('(h w) b (c p1 p2) -> b c (h p1) (w p2)', p1=patch_size, p2=patch_size, h=image_size//patch_size)
