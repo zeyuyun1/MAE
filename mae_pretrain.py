@@ -81,7 +81,7 @@ if __name__ == '__main__':
     test_dl = torch.utils.data.DataLoader(val_dataset, batch_size=100, shuffle=True, num_workers=4)
     train_dl = torch.utils.data.DataLoader(train_dataset, batch_size=100, shuffle=True, num_workers=4)
     
-    writer = SummaryWriter(os.path.join('logs', 'cifar10', 'mae-pretrain'))
+#     writer = SummaryWriter(os.path.join('logs', 'cifar10', 'mae-pretrain'))
     wandb.init(project="mae_train_cifar10",name = model_path[:-3])
     wandb.config.update(args)
     
@@ -115,24 +115,25 @@ if __name__ == '__main__':
         if e%50==0:
             torch.save(model.module, model_path)
             
-        if e%100==0:
+        if e%100==99:
             eval_acc = eval_model(model)
             wandb.log({'eval_acc': eval_acc})
             
-        writer.add_scalar('mae_loss', avg_loss, global_step=e)
+#         writer.add_scalar('mae_loss', avg_loss, global_step=e)
 #         print(f'In epoch {e}, average traning loss is {avg_loss}.')
         wandb.log({'epoch':e, 'mae_loss': avg_loss, 'lr':lr_scheduler.get_last_lr()[0]})
 
         ''' visualize the first 16 predicted images on val dataset'''
         model.eval()
         with torch.no_grad():
-            val_img = torch.stack([val_dataset[i][0] for i in range(16)])
+            val_img = torch.stack([test_ds[i][0] for i in range(16)])
             val_img = val_img.to(device)
             predicted_val_img, mask = model(val_img)
             predicted_val_img = predicted_val_img * mask + val_img * (1 - mask)
             img = torch.cat([val_img * (1 - mask), predicted_val_img, val_img], dim=0)
-            img = rearrange(img, '(v h1 w1) c h w -> c (h1 h) (w1 v w)', w1=2, v=3)
-            writer.add_image('mae_image', (img + 1) / 2, global_step=e)
+            img = rearrange(img, '(v h1 w1) c h w -> c (h1 h) (w1 v w)', w1=2, v=3).permute(1,2,0)
+        images = wandb.Image(img.cpu().numpy(), caption="epoch: {}".format(e))
+        wandb.log({"Visualization": images})
         
         ''' save model '''
         torch.save(model.module, model_path)
