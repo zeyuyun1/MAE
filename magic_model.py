@@ -103,7 +103,7 @@ class MAE_Encoder(torch.nn.Module):
 
         return features,backward_indexes
     
-    def get_feature(self, x):
+    def feature_extract(self, x):
         batch_size = x.size(0)
         num_channel = x.size(1)
         num_patches = len(self.patch_embs)
