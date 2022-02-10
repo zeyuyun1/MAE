@@ -10,8 +10,9 @@ import wandb
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
-from model import *
-from model_origin import *
+# from model import *
+# from model_origin import *
+from magic_model import *
 from utils import setup_seed
 
 
@@ -60,12 +61,14 @@ if __name__ == '__main__':
     parser.add_argument('--warmup_epoch', type=int, default=200)
     parser.add_argument('--patch_size', type=int, default=2)
     parser.add_argument('--model_name', type=str, default='vit-t-mae')
+    parser.add_argument('--n_clusters', type=int, default=200)
+    
     
     args = parser.parse_args()
 
     setup_seed(args.seed)
     
-    model_path = "{}_h_dim_{}_mlp_ratio_{}_patch_size_{}_batch_size_{}.pt".format(args.model_name,args.emb_dim,args.mlp_ratio,args.patch_size,args.batch_size)
+    model_path = "{}_h_dim_{}_mlp_ratio_{}_patch_size_{}_batch_size_{}_magic_cluster_{}.pt".format(args.model_name,args.emb_dim,args.mlp_ratio,args.patch_size,args.batch_size,args.n_clusters)
 
 
     batch_size = args.batch_size
@@ -87,7 +90,9 @@ if __name__ == '__main__':
     
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = MAE_ViT_origin(mask_ratio=args.mask_ratio)
+#     model = MAE_ViT_origin(mask_ratio=args.mask_ratio)
+
+    model = MAE_ViT_magic('./cluster_label_{}.npy'.format(args.n_clusters),patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio,emb_dim=args.emb_dim)
 #     model = MAE_ViT(patch_size=args.patch_size,mask_ratio=args.mask_ratio,mlp_ratio=args.mlp_ratio,emb_dim=args.emb_dim)
     model = torch.nn.DataParallel(model).to(device)
 
@@ -115,7 +120,7 @@ if __name__ == '__main__':
         if e%50==0:
             torch.save(model.module, model_path)
             
-        if e%100==99:
+        if e%100==0:
             eval_acc = eval_model(model)
             wandb.log({'eval_acc': eval_acc})
             
@@ -126,7 +131,7 @@ if __name__ == '__main__':
         ''' visualize the first 16 predicted images on val dataset'''
         model.eval()
         with torch.no_grad():
-            val_img = torch.stack([test_ds[i][0] for i in range(16)])
+            val_img = torch.stack([val_dataset[i][0] for i in range(16)])
             val_img = val_img.to(device)
             predicted_val_img, mask = model(val_img)
             predicted_val_img = predicted_val_img * mask + val_img * (1 - mask)
